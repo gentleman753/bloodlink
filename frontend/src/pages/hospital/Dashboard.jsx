@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../lib/api';
 import { useSocket } from '../../context/SocketContext';
+import ChatDialog from '../../components/ChatDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
@@ -10,7 +11,7 @@ import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
 import { useToast } from '../../components/ui/use-toast';
-import { Search, Plus, Package, MapPin } from 'lucide-react';
+import { Search, Plus, Package, MapPin, MessageSquare } from 'lucide-react';
 
 export default function HospitalDashboard() {
   const [bloodBanks, setBloodBanks] = useState([]);
@@ -20,6 +21,10 @@ export default function HospitalDashboard() {
   const [requestOpen, setRequestOpen] = useState(false);
   const { toast } = useToast();
   const socket = useSocket();
+
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatRecipient, setChatRecipient] = useState(null);
+  const [activeRequestId, setActiveRequestId] = useState(null);
 
   const [searchFilters, setSearchFilters] = useState({
     bloodGroup: '',
@@ -152,6 +157,12 @@ export default function HospitalDashboard() {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleOpenChat = (recipient, requestId) => {
+    setChatRecipient(recipient);
+    setActiveRequestId(requestId);
+    setChatOpen(true);
   };
 
   if (loading) {
@@ -385,11 +396,21 @@ export default function HospitalDashboard() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {req.status === 'approved' && (
-                      <Button size="sm" onClick={() => handleFulfill(req._id)}>
-                        Mark Fulfilled
+                    <div className="flex items-center gap-2">
+                      {req.status === 'approved' && (
+                        <Button size="sm" onClick={() => handleFulfill(req._id)}>
+                          Mark Fulfilled
+                        </Button>
+                      )}
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => handleOpenChat(req.bloodBank, req._id)}
+                        title="Chat with Blood Bank"
+                      >
+                        <MessageSquare className="h-4 w-4" />
                       </Button>
-                    )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -397,6 +418,13 @@ export default function HospitalDashboard() {
           </Table>
         </CardContent>
       </Card>
+
+      <ChatDialog 
+        open={chatOpen} 
+        onOpenChange={setChatOpen} 
+        recipient={chatRecipient}
+        relatedRequestId={activeRequestId}
+      />
     </div>
   );
 }

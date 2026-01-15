@@ -24,6 +24,7 @@ import requestRoutes from './routes/request.js';
 import campRoutes from './routes/camp.js';
 import certificateRoutes from './routes/certificate.js';
 import notificationRoutes from './routes/notification.js';
+import chatRoutes from './routes/chat.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -79,6 +80,7 @@ app.use('/api/requests', requestRoutes);
 app.use('/api/camps', campRoutes);
 app.use('/api/certificate', certificateRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

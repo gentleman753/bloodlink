@@ -14,6 +14,7 @@ A production-quality MERN stack application connecting Admins, Blood Banks, Hosp
 ### Real-time Updates & Notifications
 - **Targeted Alerts**: Specific Blood Banks receive instant alerts when a Hospital requests blood from them.
 - **Request Status**: Hospitals and Blood Banks receive instant updates on blood request status changes.
+- **Live Chat**: Integrated chat feature for direct communication between Hospitals and Blood Banks regarding specific requests.
 - **Nearby Donors**: Donors in the same city as the requesting hospital get real-time alerts.
 - **Notification Center**: Persistent notification history with read/unread status for all users, accessible via the bell icon.
 
@@ -30,12 +31,14 @@ A production-quality MERN stack application connecting Admins, Blood Banks, Hosp
 - **Dashboard Overview:** Metrics and Analytics Charts (Inventory, Request Status).
 - **Inventory Management:** Add and manage blood units.
 - **Request Management:** View, Approve, or Reject requests from hospitals (Real-time).
+- **Communication:** Direct chat with hospitals.
 - **Camp Management:** Organize donation camps.
 
 ### Hospital
 - **Search:** Find blood banks by location and blood group.
 - **Direct Request:** Request blood directly from search results.
 - **Request Tracking:** Monitor the status of requests (Pending, Approved, Fulfilled) in real-time.
+- **Communication:** Direct chat with blood banks.
 
 ### Donor
 - **Dashboard:** View eligibility status.

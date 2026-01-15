@@ -1,18 +1,23 @@
 import { useState, useEffect } from 'react';
 import api from '../../lib/api';
 import { useSocket } from '../../context/SocketContext';
+import ChatDialog from '../../components/ChatDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { useToast } from '../../components/ui/use-toast';
-import { Inbox, CheckCircle, XCircle } from 'lucide-react';
+import { Inbox, CheckCircle, XCircle, MessageSquare } from 'lucide-react';
 
 export default function BloodBankRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const socket = useSocket();
+
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatRecipient, setChatRecipient] = useState(null);
+  const [activeRequestId, setActiveRequestId] = useState(null);
 
   useEffect(() => {
     fetchRequests();
@@ -93,6 +98,12 @@ export default function BloodBankRequests() {
     }
   };
 
+  const handleOpenChat = (recipient, requestId) => {
+    setChatRecipient(recipient);
+    setActiveRequestId(requestId);
+    setChatOpen(true);
+  };
+
   if (loading) {
     return <div className="text-center py-8">Loading...</div>;
   }
@@ -136,18 +147,28 @@ export default function BloodBankRequests() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {req.status === 'pending' && (
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleApproveRequest(req._id)}>
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Approve
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleRejectRequest(req._id)}>
-                          <XCircle className="h-4 w-4 mr-1" />
-                          Reject
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {req.status === 'pending' && (
+                        <>
+                          <Button size="sm" onClick={() => handleApproveRequest(req._id)}>
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleRejectRequest(req._id)}>
+                            <XCircle className="h-4 w-4 mr-1" />
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => handleOpenChat(req.hospital, req._id)}
+                        title="Chat with Hospital"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -155,6 +176,13 @@ export default function BloodBankRequests() {
           </Table>
         </CardContent>
       </Card>
+
+      <ChatDialog 
+        open={chatOpen} 
+        onOpenChange={setChatOpen} 
+        recipient={chatRecipient}
+        relatedRequestId={activeRequestId}
+      />
     </div>
   );
 }
