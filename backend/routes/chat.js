@@ -87,6 +87,8 @@ router.get('/history/:userId', async (req, res) => {
         { sender: userId, recipient: req.user._id }
       ]
     })
+    .populate('sender', 'profile.name profile.avatar')
+    .populate('recipient', 'profile.name profile.avatar')
     .sort({ createdAt: 1 }); // Oldest first
 
     res.json({

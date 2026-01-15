@@ -10,7 +10,7 @@ import {
 } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Check, CheckCheck } from 'lucide-react';
 import { useToast } from './ui/use-toast';
 
 export default function ChatDialog({ open, onOpenChange, recipient, relatedRequestId }) {
@@ -101,8 +101,7 @@ export default function ChatDialog({ open, onOpenChange, recipient, relatedReque
         relatedRequestId
       });
 
-      // Add to local list immediately (socket emits to recipient only usually, 
-      // but sender needs to see it too. Our API returns the message)
+      // Add to local list immediately
       setMessages((prev) => [...prev, res.data.data.message]);
       setNewMessage('');
     } catch (error) {
@@ -116,62 +115,107 @@ export default function ChatDialog({ open, onOpenChange, recipient, relatedReque
     }
   };
 
+  const formatTime = (dateString) => {
+    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return date.toLocaleDateString();
+  };
+
+  const groupMessagesByDate = (msgs) => {
+    const groups = {};
+    msgs.forEach((msg) => {
+      const date = formatDate(msg.createdAt);
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(msg);
+    });
+    return groups;
+  };
+
   if (!recipient) return null;
+
+  const groupedMessages = groupMessagesByDate(messages);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] h-[600px] flex flex-col p-0 gap-0">
-        <DialogHeader className="p-4 border-b">
+      <DialogContent className="sm:max-w-[500px] h-[600px] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="p-4 border-b bg-background z-10">
           <DialogTitle className="flex items-center gap-2">
-            Chat with {recipient.profile?.name || recipient.name}
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-semibold">
+              {(recipient.profile?.name || recipient.name || '?')[0].toUpperCase()}
+            </div>
+            <span>{recipient.profile?.name || recipient.name}</span>
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/30" ref={scrollRef}>
           {loading ? (
             <div className="flex justify-center items-center h-full">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : messages.length === 0 ? (
             <div className="text-center text-muted-foreground mt-20">
-              No messages yet. Start the conversation!
+              <p>No messages yet.</p>
+              <p className="text-xs">Start a conversation with {recipient.profile?.name || recipient.name}.</p>
             </div>
           ) : (
-            messages.map((msg, index) => {
-              const isOwn = msg.sender === user._id || msg.sender?._id === user._id;
-              return (
-                <div
-                  key={msg._id || index}
-                  className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[75%] rounded-lg px-4 py-2 ${
-                      isOwn
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-foreground'
-                    }`}
-                  >
-                    <p className="text-sm">{msg.content}</p>
-                    <span className="text-[10px] opacity-70 block mt-1">
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
+            Object.entries(groupedMessages).map(([date, msgs]) => (
+              <div key={date} className="space-y-3">
+                <div className="flex justify-center sticky top-0 z-0">
+                  <span className="text-xs bg-background/80 backdrop-blur-sm px-2 py-1 rounded-full text-muted-foreground border shadow-sm">
+                    {date}
+                  </span>
                 </div>
-              );
-            })
+                {msgs.map((msg, index) => {
+                  const isOwn = msg.sender === user._id || msg.sender?._id === user._id;
+                  return (
+                    <div
+                      key={msg._id || index}
+                      className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[75%] rounded-2xl px-4 py-2 shadow-sm ${
+                          isOwn
+                            ? 'bg-primary text-primary-foreground rounded-br-none'
+                            : 'bg-white border text-foreground rounded-bl-none'
+                        }`}
+                      >
+                        <p className="text-sm leading-relaxed">{msg.content}</p>
+                        <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                          <span className="text-[10px]">
+                            {formatTime(msg.createdAt)}
+                          </span>
+                          {isOwn && (
+                            msg.read ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))
           )}
         </div>
 
-        <div className="p-4 border-t mt-auto">
+        <div className="p-4 border-t bg-background mt-auto">
           <form onSubmit={handleSend} className="flex gap-2">
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type a message..."
               disabled={sending}
-              className="flex-1"
+              className="flex-1 rounded-full"
             />
-            <Button type="submit" size="icon" disabled={sending || !newMessage.trim()}>
+            <Button type="submit" size="icon" rounded="full" className="rounded-full h-10 w-10 shrink-0" disabled={sending || !newMessage.trim()}>
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </form>
