@@ -112,7 +112,7 @@ The project is configured for deployment on **Render** (Backend) and **Vercel** 
 1.  Push code to GitHub.
 2.  Create a new **Blueprint** on Render.
 3.  Connect repository. Render will auto-detect `render.yaml`.
-4.  Add Environment Variables in Render Dashboard (`MONGODB_URI`, `JWT_SECRET`).
+4.  Add Environment Variables in Render Dashboard (`MONGODB_URI`, `JWT_SECRET`, `CLIENT_URL` = Your Vercel Frontend URL).
 
 ### Frontend (Vercel)
 1.  Import repository to Vercel.
