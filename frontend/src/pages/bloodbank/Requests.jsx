@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../lib/api';
+import { useSocket } from '../../context/SocketContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
@@ -11,12 +12,47 @@ export default function BloodBankRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const socket = useSocket();
 
   useEffect(() => {
     fetchRequests();
-    const interval = setInterval(fetchRequests, 30000);
-    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    // Listen for new requests
+    socket.on('newBloodRequest', (newRequest) => {
+      // Check if it's strictly a new request we should see (e.g. sent to us)
+      // The socket room logic handles the targeting, so we just add it.
+      // But we should check if it's already there (e.g. from initial fetch)
+      setRequests((prev) => {
+        if (prev.some(req => req._id === newRequest._id)) return prev;
+        return [newRequest, ...prev];
+      });
+
+      if (newRequest.notificationType === 'personal') {
+         toast({
+          title: 'New Blood Request',
+          description: `${newRequest.hospital?.profile?.name} requested ${newRequest.quantity} units of ${newRequest.bloodGroup}`,
+        });
+      }
+    });
+
+    // Listen for updates
+    socket.on('requestUpdated', (updatedRequest) => {
+      setRequests((prev) => 
+        prev.map((req) => 
+          req._id === updatedRequest._id ? updatedRequest : req
+        )
+      );
+    });
+
+    return () => {
+      socket.off('newBloodRequest');
+      socket.off('requestUpdated');
+    };
+  }, [socket]);
 
   const fetchRequests = async () => {
     try {

@@ -4,6 +4,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 
 // Load environment variables
 dotenv.config();
@@ -21,13 +23,44 @@ import inventoryRoutes from './routes/inventory.js';
 import requestRoutes from './routes/request.js';
 import campRoutes from './routes/camp.js';
 import certificateRoutes from './routes/certificate.js';
+import notificationRoutes from './routes/notification.js';
 
 const app = express();
+const httpServer = createServer(app);
+
+// Initialize Socket.io
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Socket.io Middleware to inject io into req
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
+// Socket.io Connection Handler
+io.on('connection', (socket) => {
+  console.log('New client connected:', socket.id);
+
+  socket.on('join', (room) => {
+    socket.join(room);
+    console.log(`Socket ${socket.id} joined room: ${room}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
 
 // Database connection
 mongoose
@@ -45,6 +78,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/camps', campRoutes);
 app.use('/api/certificate', certificateRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -71,7 +105,6 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-

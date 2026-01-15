@@ -1,13 +1,36 @@
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
 import { LogOut, Heart, User } from 'lucide-react';
 import Sidebar from './Sidebar';
+import { useToast } from './ui/use-toast';
+import { useEffect } from 'react';
+import Notifications from './Notifications';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
+  const socket = useSocket();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('newBloodRequest', (data) => {
+        toast({
+          title: "Urgent Blood Request",
+          description: `${data.hospital?.profile?.name || 'A Hospital'} needs ${data.quantity} units of ${data.bloodGroup} (Urgency: ${data.urgency})`,
+          variant: "destructive",
+          duration: 10000,
+        });
+      });
+
+      return () => {
+        socket.off('newBloodRequest');
+      };
+    }
+  }, [socket, toast]);
 
   const roleLabels = {
     admin: 'Admin',
@@ -33,6 +56,7 @@ export default function Layout({ children }) {
             </span>
           </div>
           <div className="flex items-center gap-4">
+            <Notifications />
             <div className="flex items-center gap-2 text-sm">
               <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
                 <User className="h-4 w-4 text-muted-foreground" />
@@ -56,4 +80,3 @@ export default function Layout({ children }) {
     </div>
   );
 }
-

@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator';
 import BloodRequest from '../models/BloodRequest.js';
 import Inventory from '../models/Inventory.js';
 import InventoryTransaction from '../models/InventoryTransaction.js';
+import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { requireVerifiedBloodBank } from '../middleware/auth.js';
@@ -114,8 +115,56 @@ router.post(
       await request.save();
 
       const populatedRequest = await BloodRequest.findById(request._id)
-        .populate('hospital', 'profile.name profile.address')
-        .populate('bloodBank', 'profile.name profile.address');
+        .populate('hospital', 'profile.name profile.address profile.phone')
+        .populate('bloodBank', 'profile.name profile.address profile.phone');
+
+      // 1. Notify the specific Blood Bank
+      await Notification.create({
+        recipient: bloodBank,
+        title: 'New Blood Request',
+        message: `${req.user.profile.name} requested ${quantity} units of ${bloodGroup}`,
+        type: 'request',
+        relatedId: request._id,
+      });
+
+      // Emit to Blood Bank's personal room (using their User ID)
+      console.log(`Emitting to Blood Bank room: ${bloodBank.toString()}`);
+      req.io.to(bloodBank.toString()).emit('newBloodRequest', {
+        ...populatedRequest.toObject(),
+        notificationType: 'personal'
+      });
+
+
+      // 2. Notify Nearby Donors
+      const hospitalCity = req.user.profile?.address?.city;
+      if (hospitalCity) {
+        // Find donors in the same city
+        const donors = await User.find({
+          role: 'donor',
+          'profile.address.city': new RegExp(`^${hospitalCity}$`, 'i'),
+        }).select('_id');
+
+        if (donors.length > 0) {
+          // Create notifications for all nearby donors
+          const donorNotifications = donors.map((donor) => ({
+            recipient: donor._id,
+            title: 'Urgent Blood Need Nearby',
+            message: `${req.user.profile.name} in ${hospitalCity} needs ${quantity} units of ${bloodGroup}`,
+            type: 'alert',
+            relatedId: request._id,
+          }));
+
+          await Notification.insertMany(donorNotifications);
+
+          // Emit to city-based donor room
+          const roomName = `donors_${hospitalCity.toLowerCase()}`;
+          req.io.to(roomName).emit('newBloodRequest', {
+             ...populatedRequest.toObject(),
+             notificationType: 'broadcast',
+             message: `Urgent: ${bloodGroup} needed at ${req.user.profile.name}`
+          });
+        }
+      }
 
       res.status(201).json({
         success: true,
@@ -212,8 +261,12 @@ router.patch('/:id/approve', requireVerifiedBloodBank, async (req, res) => {
     await request.save();
 
     const populatedRequest = await BloodRequest.findById(request._id)
-      .populate('hospital', 'profile.name profile.address')
-      .populate('bloodBank', 'profile.name profile.address');
+      .populate('hospital', 'profile.name profile.address profile.phone')
+      .populate('bloodBank', 'profile.name profile.address profile.phone');
+
+    // Emit socket event
+    req.io.to(request.hospital.toString()).emit('requestUpdated', populatedRequest);
+    req.io.to(request.bloodBank.toString()).emit('requestUpdated', populatedRequest);
 
     res.json({
       success: true,
@@ -263,8 +316,12 @@ router.patch('/:id/reject', requireVerifiedBloodBank, async (req, res) => {
     await request.save();
 
     const populatedRequest = await BloodRequest.findById(request._id)
-      .populate('hospital', 'profile.name profile.address')
-      .populate('bloodBank', 'profile.name profile.address');
+      .populate('hospital', 'profile.name profile.address profile.phone')
+      .populate('bloodBank', 'profile.name profile.address profile.phone');
+
+    // Emit socket event
+    req.io.to(request.hospital.toString()).emit('requestUpdated', populatedRequest);
+    req.io.to(request.bloodBank.toString()).emit('requestUpdated', populatedRequest);
 
     res.json({
       success: true,
@@ -314,8 +371,12 @@ router.patch('/:id/fulfill', authorize('hospital'), async (req, res) => {
     await request.save();
 
     const populatedRequest = await BloodRequest.findById(request._id)
-      .populate('hospital', 'profile.name profile.address')
-      .populate('bloodBank', 'profile.name profile.address');
+      .populate('hospital', 'profile.name profile.address profile.phone')
+      .populate('bloodBank', 'profile.name profile.address profile.phone');
+
+    // Emit socket event
+    req.io.to(request.hospital.toString()).emit('requestUpdated', populatedRequest);
+    req.io.to(request.bloodBank.toString()).emit('requestUpdated', populatedRequest);
 
     res.json({
       success: true,
@@ -391,4 +452,3 @@ router.get('/search/bloodbanks', authorize('hospital'), async (req, res) => {
 });
 
 export default router;
-

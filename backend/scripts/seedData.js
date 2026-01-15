@@ -37,14 +37,14 @@ const seedData = async () => {
       password: 'password123',
       role: 'bloodbank',
       profile: {
-        name: 'City Blood Bank',
+        name: 'Lilavati Blood Bank',
         address: {
-          street: '123 Main St',
-          city: 'New York',
-          state: 'NY',
-          zipCode: '10001',
+          street: 'A-791, Bandra Reclamation, Bandra West',
+          city: 'Mumbai',
+          state: 'Maharashtra',
+          zipCode: '400050',
         },
-        licenseNumber: 'BB-12345',
+        licenseNumber: 'MH-BB-1024',
         isVerified: true,
       },
     });
@@ -57,14 +57,14 @@ const seedData = async () => {
       password: 'password123',
       role: 'hospital',
       profile: {
-        name: 'General Hospital',
+        name: 'Nanavati Super Speciality Hospital',
         address: {
-          street: '456 Healthcare Blvd',
-          city: 'New York',
-          state: 'NY',
-          zipCode: '10002',
+          street: 'SV Road, Vile Parle West',
+          city: 'Mumbai',
+          state: 'Maharashtra',
+          zipCode: '400056',
         },
-        registrationNumber: 'HOSP-67890',
+        registrationNumber: 'MH-HOSP-5567',
         isVerified: true,
       },
     });
@@ -77,14 +77,14 @@ const seedData = async () => {
       password: 'password123',
       role: 'donor',
       profile: {
-        name: 'John Doe',
-        phone: '555-0101',
+        name: 'Rajesh Sharma',
+        phone: '9876543210',
         bloodGroup: 'O+',
-        dateOfBirth: new Date('1990-01-01'),
+        dateOfBirth: new Date('1995-08-15'),
         gender: 'Male',
         address: {
-          city: 'New York',
-          state: 'NY',
+          city: 'Mumbai',
+          state: 'Maharashtra',
         },
       },
     });
@@ -95,7 +95,7 @@ const seedData = async () => {
     const inventory = new Inventory({
       bloodBank: bloodBank._id,
       bloodGroup: 'O+',
-      quantity: 10,
+      quantity: 15,
       expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
       source: 'donation',
     });
@@ -110,8 +110,8 @@ const seedData = async () => {
       quantity: 2,
       urgency: 'high',
       status: 'pending',
-      patientName: 'Jane Smith',
-      reason: 'Surgery',
+      patientName: 'Suresh Patil',
+      reason: 'Emergency Surgery',
     });
     await request.save();
     console.log('Blood Request created');
@@ -119,16 +119,16 @@ const seedData = async () => {
     // Create Camp
     const camp = new Camp({
       bloodBank: bloodBank._id,
-      name: 'City Square Donation Camp',
+      name: 'Shivaji Park Donation Drive',
       date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
       startTime: '09:00',
       endTime: '17:00',
       location: {
-        address: 'City Square Park',
-        city: 'New York',
-        state: 'NY',
+        address: 'Shivaji Park, Dadar',
+        city: 'Mumbai',
+        state: 'Maharashtra',
       },
-      description: 'Join us for a blood donation drive!',
+      description: 'Join us for a blood donation drive to save lives!',
     });
     await camp.save();
     console.log('Camp created');

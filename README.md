@@ -4,12 +4,18 @@ A production-quality MERN stack application connecting Admins, Blood Banks, Hosp
 
 ## Tech Stack
 
-- **Frontend**: React.js + shadcn/ui
-- **Backend**: Node.js + Express.js
+- **Frontend**: React.js + shadcn/ui + Socket.io-client
+- **Backend**: Node.js + Express.js + Socket.io
 - **Database**: MongoDB
 - **Authentication**: JWT
 
 ## Features
+
+### Real-time Updates & Notifications
+- **Targeted Alerts**: Specific Blood Banks receive instant alerts when a Hospital requests blood from them.
+- **Request Status**: Hospitals and Blood Banks receive instant updates on blood request status changes.
+- **Nearby Donors**: Donors in the same city as the requesting hospital get real-time alerts.
+- **Notification Center**: Persistent notification history with read/unread status for all users, accessible via the bell icon.
 
 ### Public
 - Landing page with features overview
@@ -23,13 +29,13 @@ A production-quality MERN stack application connecting Admins, Blood Banks, Hosp
 ### Blood Bank
 - **Dashboard Overview:** Metrics and Analytics Charts (Inventory, Request Status).
 - **Inventory Management:** Add and manage blood units.
-- **Request Management:** View, Approve, or Reject requests from hospitals.
+- **Request Management:** View, Approve, or Reject requests from hospitals (Real-time).
 - **Camp Management:** Organize donation camps.
 
 ### Hospital
 - **Search:** Find blood banks by location and blood group.
 - **Direct Request:** Request blood directly from search results.
-- **Request Tracking:** Monitor the status of requests (Pending, Approved, Fulfilled).
+- **Request Tracking:** Monitor the status of requests (Pending, Approved, Fulfilled) in real-time.
 
 ### Donor
 - **Dashboard:** View eligibility status.
@@ -71,7 +77,7 @@ VITE_API_URL=http://localhost:5000/api
 
 ### 3. Database Seeding (Optional)
 
-To populate the database with test users (Admin, Hospital, Blood Bank, Donor) and sample data:
+To populate the database with test users (Admin, Hospital, Blood Bank, Donor) and sample data (customized for Indian context - Mumbai):
 ```bash
 node backend/scripts/seedData.js
 ```
@@ -79,9 +85,9 @@ node backend/scripts/seedData.js
 **Default Test Credentials:**
 *   **Password:** `password123` (for all accounts)
 *   **Admin:** `admin@bloodlink.com`
-*   **Blood Bank:** `bb@bloodlink.com`
-*   **Hospital:** `hospital@bloodlink.com`
-*   **Donor:** `donor@bloodlink.com`
+*   **Blood Bank:** `bb@bloodlink.com` (Lilavati Blood Bank, Mumbai)
+*   **Hospital:** `hospital@bloodlink.com` (Nanavati Hospital, Mumbai)
+*   **Donor:** `donor@bloodlink.com` (Rajesh Sharma, Mumbai)
 
 ### 4. Running the App
 

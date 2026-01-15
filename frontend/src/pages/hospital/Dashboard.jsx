@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../lib/api';
+import { useSocket } from '../../context/SocketContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
@@ -18,6 +19,7 @@ export default function HospitalDashboard() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
   const { toast } = useToast();
+  const socket = useSocket();
 
   const [searchFilters, setSearchFilters] = useState({
     bloodGroup: '',
@@ -38,9 +40,28 @@ export default function HospitalDashboard() {
 
   useEffect(() => {
     fetchRequests();
-    const interval = setInterval(fetchRequests, 30000);
-    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('requestUpdated', (updatedRequest) => {
+      setRequests((prev) => 
+        prev.map((req) => 
+          req._id === updatedRequest._id ? updatedRequest : req
+        )
+      );
+      
+      toast({
+        title: 'Request Updated',
+        description: `Request for ${updatedRequest.quantity} units of ${updatedRequest.bloodGroup} is now ${updatedRequest.status}`,
+      });
+    });
+
+    return () => {
+      socket.off('requestUpdated');
+    };
+  }, [socket]);
 
   const fetchRequests = async () => {
     try {
